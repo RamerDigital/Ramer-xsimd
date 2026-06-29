@@ -291,7 +291,7 @@ struct load_store_test
     }
 
 private:
-#ifdef XSIMD_WITH_SSE2
+#if XSIMD_WITH_SSE2
     struct test_load_as_return_type
     {
         using lower_arch = xsimd::sse2;
@@ -632,6 +632,35 @@ TEST_CASE_TEMPLATE("store_masked respects Mode", B, BATCH_TYPES)
     v.store(aligned_buf, signed_cst_mask, xsimd::aligned_mode {});
     for (std::size_t i = 0; i < N; ++i)
         CHECK_EQ(aligned_buf[i], T(7));
+}
+
+TEST_CASE("[load_store] C++20 std::span and Ranges")
+{
+    using B = xsimd::batch<float>;
+    constexpr std::size_t N = B::size;
+    alignas(B::arch_type::alignment()) float data[N];
+    for (std::size_t i = 0; i < N; ++i) {
+        data[i] = static_cast<float>(i + 1);
+    }
+
+    std::span<float, N> sp(data);
+    auto b = B::load_aligned(sp);
+
+    // Verify ranges iteration and indexing
+    std::size_t idx = 0;
+    for (float val : b) {
+        CHECK_EQ(val, data[idx]);
+        CHECK_EQ(b[idx], data[idx]);
+        idx++;
+    }
+    CHECK_EQ(idx, N);
+
+    alignas(B::arch_type::alignment()) float out_data[N] = {};
+    std::span<float, N> out_sp(out_data);
+    b.store(out_sp, xsimd::aligned_mode());
+    for (std::size_t i = 0; i < N; ++i) {
+        CHECK_EQ(out_data[i], data[i]);
+    }
 }
 
 #endif

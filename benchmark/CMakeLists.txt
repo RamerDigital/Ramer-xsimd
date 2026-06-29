@@ -28,38 +28,10 @@ include(CheckCXXCompilerFlag)
 
 string(TOUPPER "${CMAKE_BUILD_TYPE}" U_CMAKE_BUILD_TYPE)
 
-if (CMAKE_CXX_COMPILER_ID MATCHES "Clang" OR CMAKE_CXX_COMPILER_ID MATCHES "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Intel")
-    if(NOT CMAKE_CXX_FLAGS MATCHES "-march" AND NOT CMAKE_CXX_FLAGS MATCHES "-arch" AND NOT CMAKE_OSX_ARCHITECTURES)
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")
+if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    if(NOT CMAKE_CXX_FLAGS MATCHES "-mcpu" AND NOT CMAKE_CXX_FLAGS MATCHES "-arch" AND NOT CMAKE_OSX_ARCHITECTURES)
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mcpu=apple-m1")
     endif()
-
-    if(NOT MSVC)
-        if (ENABLE_XTL_COMPLEX)
-            CHECK_CXX_COMPILER_FLAG("-std=c++17" HAS_CPP17_FLAG)
-            if (NOT HAS_CPP17_FLAG)
-                message(FATAL_ERROR "Unsupported compiler -- xsimd requires C++17 support when xtl complex support is enabled")
-            endif()
-            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
-        else()
-            CHECK_CXX_COMPILER_FLAG("-std=c++14" HAS_CPP14_FLAG)
-            if (NOT HAS_CPP14_FLAG)
-                message(FATAL_ERROR "Unsupported compiler -- xsimd requires C++14 support!")
-            else()
-                set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
-            endif()
-        endif()
-    endif()
-endif()
-
-if(MSVC)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc /MP /bigobj")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /arch:AVX2")
-    set(CMAKE_EXE_LINKER_FLAGS /MANIFEST:NO)
-    foreach(flag_var
-            CMAKE_CXX_FLAGS CMAKE_CXX_FLAGS_DEBUG CMAKE_CXX_FLAGS_RELEASE
-            CMAKE_CXX_FLAGS_MINSIZEREL CMAKE_CXX_FLAGS_RELWITHDEBINFO)
-        string(REPLACE "/MD" "-MT" ${flag_var} "${${flag_var}}")
-    endforeach()
 endif()
 
 set(XSIMD_BENCHMARK_SRC

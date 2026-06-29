@@ -107,11 +107,11 @@ TEST_CASE("[multi arch support]")
     {
         static_assert(xsimd::arch_list<xsimd::common>::alignment() == 0,
                       "common");
-        static_assert(xsimd::arch_list<xsimd::sse2>::alignment()
-                          == xsimd::sse2::alignment(),
+        static_assert(xsimd::arch_list<xsimd::neon>::alignment()
+                          == xsimd::neon::alignment(),
                       "one architecture");
-        static_assert(xsimd::arch_list<xsimd::avx512f, xsimd::sse2>::alignment()
-                          == xsimd::avx512f::alignment(),
+        static_assert(xsimd::arch_list<xsimd::neon64, xsimd::neon>::alignment()
+                          == xsimd::neon64::alignment(),
                       "two architectures");
     }
 

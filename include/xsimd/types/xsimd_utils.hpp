@@ -186,16 +186,12 @@ namespace xsimd
      * bit_cast *
      ********************/
 
+#include <bit>
+
     template <class To, class From>
-    inline To bit_cast(From val) noexcept
+    inline constexpr To bit_cast(From val) noexcept
     {
-        static_assert(sizeof(From) == sizeof(To), "casting between compatible layout");
-        // FIXME: Some old version of GCC don't support that trait
-        // static_assert(std::is_trivially_copyable<From>::value, "input type is trivially copyable");
-        // static_assert(std::is_trivially_copyable<To>::value, "output type is trivially copyable");
-        To res;
-        std::memcpy(&res, &val, sizeof(val));
-        return res;
+        return std::bit_cast<To>(val);
     }
 
     namespace kernel

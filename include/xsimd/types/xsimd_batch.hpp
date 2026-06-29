@@ -21,6 +21,7 @@
 
 #include <cassert>
 #include <complex>
+#include <span>
 
 namespace xsimd
 {
@@ -165,6 +166,10 @@ namespace xsimd
         XSIMD_INLINE void store(U* mem, aligned_mode) const noexcept;
         template <class U>
         XSIMD_INLINE void store(U* mem, unaligned_mode) const noexcept;
+        template <class U, std::size_t Extent>
+        XSIMD_INLINE void store(std::span<U, Extent> mem, aligned_mode) const noexcept;
+        template <class U, std::size_t Extent>
+        XSIMD_INLINE void store(std::span<U, Extent> mem, unaligned_mode) const noexcept;
         template <class U>
         XSIMD_INLINE void store(U* mem, stream_mode) const noexcept;
 
@@ -176,10 +181,18 @@ namespace xsimd
         XSIMD_NO_DISCARD static XSIMD_INLINE batch load_aligned(U const* mem) noexcept;
         template <class U>
         XSIMD_NO_DISCARD static XSIMD_INLINE batch load_unaligned(U const* mem) noexcept;
+        template <class U, std::size_t Extent>
+        XSIMD_NO_DISCARD static XSIMD_INLINE batch load_aligned(std::span<U, Extent> mem) noexcept;
+        template <class U, std::size_t Extent>
+        XSIMD_NO_DISCARD static XSIMD_INLINE batch load_unaligned(std::span<U, Extent> mem) noexcept;
         template <class U>
         XSIMD_NO_DISCARD static XSIMD_INLINE batch load(U const* mem, aligned_mode) noexcept;
         template <class U>
         XSIMD_NO_DISCARD static XSIMD_INLINE batch load(U const* mem, unaligned_mode) noexcept;
+        template <class U, std::size_t Extent>
+        XSIMD_NO_DISCARD static XSIMD_INLINE batch load(std::span<U, Extent> mem, aligned_mode) noexcept;
+        template <class U, std::size_t Extent>
+        XSIMD_NO_DISCARD static XSIMD_INLINE batch load(std::span<U, Extent> mem, unaligned_mode) noexcept;
         // Compile-time mask overloads
         template <class U, bool... Values, class Mode = aligned_mode>
         XSIMD_NO_DISCARD static XSIMD_INLINE batch load(U const* mem, batch_bool_constant<T, A, Values...> mask, Mode = {}) noexcept;
@@ -193,6 +206,60 @@ namespace xsimd
 
         XSIMD_INLINE T get(std::size_t i) const noexcept;
 
+        template <bool IsConst>
+        class batch_iterator
+        {
+            using batch_type = typename std::conditional<IsConst, const batch*, batch*>::type;
+        public:
+            using iterator_category = std::random_access_iterator_tag;
+            using value_type = T;
+            using difference_type = std::ptrdiff_t;
+            using pointer = T*;
+            using reference = T;
+
+            XSIMD_INLINE batch_iterator() noexcept : m_batch(nullptr), m_index(0) {}
+            XSIMD_INLINE batch_iterator(batch_type b, std::size_t index) noexcept : m_batch(b), m_index(index) {}
+
+            XSIMD_INLINE T operator*() const noexcept { return m_batch->get(m_index); }
+            XSIMD_INLINE batch_iterator& operator++() noexcept { ++m_index; return *this; }
+            XSIMD_INLINE batch_iterator operator++(int) noexcept { auto tmp = *this; ++m_index; return tmp; }
+            XSIMD_INLINE batch_iterator& operator--() noexcept { --m_index; return *this; }
+            XSIMD_INLINE batch_iterator operator--(int) noexcept { auto tmp = *this; --m_index; return tmp; }
+
+            XSIMD_INLINE batch_iterator& operator+=(difference_type n) noexcept { m_index += n; return *this; }
+            XSIMD_INLINE batch_iterator& operator-=(difference_type n) noexcept { m_index -= n; return *this; }
+
+            XSIMD_INLINE friend batch_iterator operator+(batch_iterator it, difference_type n) noexcept { it += n; return it; }
+            XSIMD_INLINE friend batch_iterator operator+(difference_type n, batch_iterator it) noexcept { it += n; return it; }
+            XSIMD_INLINE friend batch_iterator operator-(batch_iterator it, difference_type n) noexcept { it -= n; return it; }
+            XSIMD_INLINE friend difference_type operator-(batch_iterator const& lhs, batch_iterator const& rhs) noexcept { return static_cast<difference_type>(lhs.m_index) - static_cast<difference_type>(rhs.m_index); }
+
+            XSIMD_INLINE T operator[](difference_type n) const noexcept { return m_batch->get(m_index + n); }
+
+            XSIMD_INLINE bool operator==(batch_iterator const& other) const noexcept { return m_index == other.m_index; }
+            XSIMD_INLINE bool operator!=(batch_iterator const& other) const noexcept { return m_index != other.m_index; }
+            XSIMD_INLINE bool operator<(batch_iterator const& other) const noexcept { return m_index < other.m_index; }
+            XSIMD_INLINE bool operator<=(batch_iterator const& other) const noexcept { return m_index <= other.m_index; }
+            XSIMD_INLINE bool operator>(batch_iterator const& other) const noexcept { return m_index > other.m_index; }
+            XSIMD_INLINE bool operator>=(batch_iterator const& other) const noexcept { return m_index >= other.m_index; }
+
+        private:
+            batch_type m_batch;
+            std::size_t m_index;
+        };
+
+        using const_iterator = batch_iterator<true>;
+        using iterator = batch_iterator<false>;
+
+        XSIMD_INLINE iterator begin() noexcept { return iterator(this, 0); }
+        XSIMD_INLINE iterator end() noexcept { return iterator(this, size); }
+        XSIMD_INLINE const_iterator begin() const noexcept { return const_iterator(this, 0); }
+        XSIMD_INLINE const_iterator end() const noexcept { return const_iterator(this, size); }
+        XSIMD_INLINE const_iterator cbegin() const noexcept { return const_iterator(this, 0); }
+        XSIMD_INLINE const_iterator cend() const noexcept { return const_iterator(this, size); }
+
+        XSIMD_INLINE T operator[](std::size_t i) const noexcept { return get(i); }
+        XSIMD_INLINE constexpr std::size_t size_bytes() const noexcept { return size * sizeof(T); }
         XSIMD_INLINE T first() const noexcept;
 
         // comparison operators. Defined as friend to enable automatic
@@ -662,6 +729,14 @@ namespace xsimd
         return store_aligned(mem);
     }
 
+    template <class T, class A>
+    template <class U, std::size_t Extent>
+    XSIMD_INLINE void batch<T, A>::store(std::span<U, Extent> mem, aligned_mode) const noexcept
+    {
+        assert(mem.size() >= size && "span size is smaller than batch size");
+        return store_aligned(mem.data());
+    }
+
     /**
      * Equivalent to batch::store_unaligned()
      */
@@ -671,6 +746,14 @@ namespace xsimd
     {
         detail::static_check_supported_config<T, A>();
         return store_unaligned(mem);
+    }
+
+    template <class T, class A>
+    template <class U, std::size_t Extent>
+    XSIMD_INLINE void batch<T, A>::store(std::span<U, Extent> mem, unaligned_mode) const noexcept
+    {
+        assert(mem.size() >= size && "span size is smaller than batch size");
+        return store_unaligned(mem.data());
     }
 
     // masked store free functions are provided in xsimd_api.hpp
@@ -699,6 +782,14 @@ namespace xsimd
         return kernel::load_aligned<A>(mem, kernel::convert<T> {}, A {});
     }
 
+    template <class T, class A>
+    template <class U, std::size_t Extent>
+    XSIMD_INLINE batch<T, A> batch<T, A>::load_aligned(std::span<U, Extent> mem) noexcept
+    {
+        assert(mem.size() >= size && "span size is smaller than batch size");
+        return load_aligned(mem.data());
+    }
+
     /**
      * Loading from unaligned memory. May involve a conversion if \c U is different
      * from \c T.
@@ -709,6 +800,14 @@ namespace xsimd
     {
         detail::static_check_supported_config<T, A>();
         return kernel::load_unaligned<A>(mem, kernel::convert<T> {}, A {});
+    }
+
+    template <class T, class A>
+    template <class U, std::size_t Extent>
+    XSIMD_INLINE batch<T, A> batch<T, A>::load_unaligned(std::span<U, Extent> mem) noexcept
+    {
+        assert(mem.size() >= size && "span size is smaller than batch size");
+        return load_unaligned(mem.data());
     }
 
     /**
@@ -722,15 +821,28 @@ namespace xsimd
         return load_aligned(mem);
     }
 
-    /**
-     * Equivalent to batch::load_unaligned()
-     */
+    template <class T, class A>
+    template <class U, std::size_t Extent>
+    XSIMD_INLINE batch<T, A> batch<T, A>::load(std::span<U, Extent> mem, aligned_mode) noexcept
+    {
+        assert(mem.size() >= size && "span size is smaller than batch size");
+        return load_aligned(mem.data());
+    }
+
     template <class T, class A>
     template <class U>
     XSIMD_INLINE batch<T, A> batch<T, A>::load(U const* mem, unaligned_mode) noexcept
     {
         detail::static_check_supported_config<T, A>();
         return load_unaligned(mem);
+    }
+
+    template <class T, class A>
+    template <class U, std::size_t Extent>
+    XSIMD_INLINE batch<T, A> batch<T, A>::load(std::span<U, Extent> mem, unaligned_mode) noexcept
+    {
+        assert(mem.size() >= size && "span size is smaller than batch size");
+        return load_unaligned(mem.data());
     }
 
     template <class T, class A>
