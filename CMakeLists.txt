@@ -40,7 +40,24 @@ target_include_directories(xsimd INTERFACE
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>)
 
-target_compile_features(xsimd INTERFACE cxx_std_14)
+target_compile_features(xsimd INTERFACE cxx_std_20)
+
+# Apple Silicon & compiler optimization flags
+if(APPLE AND CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    set(XSIMD_APPLE_M_CPU "apple-m1" CACHE STRING "Apple M-series CPU target")
+    target_compile_options(xsimd INTERFACE "-mcpu=${XSIMD_APPLE_M_CPU}")
+
+    option(XSIMD_LTO "Enable Link-Time Optimization (ThinLTO)" ON)
+    if(XSIMD_LTO)
+        target_compile_options(xsimd INTERFACE "-flto=thin")
+        target_link_options(xsimd INTERFACE "-flto=thin")
+    endif()
+
+    option(XSIMD_APPLE_FAST_MATH "Enable fast-math optimizations" OFF)
+    if(XSIMD_APPLE_FAST_MATH)
+        target_compile_options(xsimd INTERFACE "-ffast-math")
+    endif()
+endif()
 
 # Only add xtl build option to the build tree, that is, if xsimd being locally
 # developed or is vendored.
