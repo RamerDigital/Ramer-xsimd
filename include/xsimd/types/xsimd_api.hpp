@@ -1754,7 +1754,8 @@ namespace xsimd
      * @param y batch involved in the product.
      * @return the low N bits of the product, lane-wise.
      */
-    template <class T, class A, class = std::enable_if_t<std::is_integral<T>::value>>
+    template <class T, class A>
+    requires std::is_integral_v<T>
     XSIMD_INLINE batch<T, A> mul_lo(batch<T, A> const& x, batch<T, A> const& y) noexcept
     {
         detail::static_check_supported_config<T, A>();
@@ -1770,7 +1771,8 @@ namespace xsimd
      * @param y batch involved in the product.
      * @return the high N bits of the product, lane-wise.
      */
-    template <class T, class A, class = std::enable_if_t<std::is_integral<T>::value>>
+    template <class T, class A>
+    requires std::is_integral_v<T>
     XSIMD_INLINE batch<T, A> mul_hi(batch<T, A> const& x, batch<T, A> const& y) noexcept
     {
         detail::static_check_supported_config<T, A>();
@@ -1785,7 +1787,8 @@ namespace xsimd
      * @param y batch involved in the product.
      * @return pair of batches ``{hi, lo}``.
      */
-    template <class T, class A, class = std::enable_if_t<std::is_integral<T>::value>>
+    template <class T, class A>
+    requires std::is_integral_v<T>
     XSIMD_INLINE std::pair<batch<T, A>, batch<T, A>>
     mul_hilo(batch<T, A> const& x, batch<T, A> const& y) noexcept
     {
@@ -1986,7 +1989,8 @@ namespace xsimd
      * @param y batch of integral values.
      * @return \c x raised to the power \c y.
      */
-    template <class T, class ITy, class A, class = std::enable_if_t<std::is_integral<ITy>::value>>
+    template <class T, class ITy, class A>
+    requires std::is_integral_v<ITy>
     XSIMD_INLINE batch<T, A> pow(batch<T, A> const& x, ITy y) noexcept
     {
         detail::static_check_supported_config<T, A>();
@@ -2030,7 +2034,8 @@ namespace xsimd
      * @param x batch of floating point numbers.
      * @return the reciprocal.
      */
-    template <class T, class A, class = std::enable_if_t<std::is_floating_point<T>::value>>
+    template <class T, class A>
+    requires std::is_floating_point_v<T>
     XSIMD_INLINE batch<T, A> reciprocal(batch<T, A> const& x) noexcept
     {
         detail::static_check_supported_config<T, A>();
@@ -2974,7 +2979,8 @@ namespace xsimd
      * @param self batch_bool of \c T
      * @return \c self cast to a \c batch of \c T
      */
-    template <class T, class A, std::enable_if_t<std::is_integral<T>::value, int> = 3>
+    template <class T, class A>
+    requires std::is_integral_v<T>
     XSIMD_INLINE batch<T, A> bitwise_cast(batch_bool<T, A> const& self) noexcept
     {
         T z(0);
@@ -2982,7 +2988,8 @@ namespace xsimd
         return select(self, batch<T, A>(T(~z)), batch<T, A>(z));
     }
 
-    template <class T, class A, std::enable_if_t<std::is_floating_point<T>::value, int> = 3>
+    template <class T, class A>
+    requires std::is_floating_point_v<T>
     XSIMD_INLINE batch<T, A> bitwise_cast(batch_bool<T, A> const& self) noexcept
     {
         T z0(0), z1(0);

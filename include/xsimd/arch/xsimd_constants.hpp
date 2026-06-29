@@ -24,34 +24,34 @@ namespace xsimd
 
 #define XSIMD_DEFINE_CONSTANT(NAME, SINGLE, DOUBLE) \
     template <class T>                              \
-    XSIMD_INLINE T NAME() noexcept                  \
+    XSIMD_INLINE constexpr T NAME() noexcept        \
     {                                               \
         return T(NAME<typename T::value_type>());   \
     }                                               \
     template <>                                     \
-    XSIMD_INLINE float NAME<float>() noexcept       \
+    XSIMD_INLINE constexpr float NAME<float>() noexcept       \
     {                                               \
         return SINGLE;                              \
     }                                               \
     template <>                                     \
-    XSIMD_INLINE double NAME<double>() noexcept     \
+    XSIMD_INLINE constexpr double NAME<double>() noexcept     \
     {                                               \
         return DOUBLE;                              \
     }
 
 #define XSIMD_DEFINE_CONSTANT_HEX(NAME, SINGLE, DOUBLE) \
     template <class T>                                  \
-    XSIMD_INLINE T NAME() noexcept                      \
+    XSIMD_INLINE constexpr T NAME() noexcept            \
     {                                                   \
         return T(NAME<typename T::value_type>());       \
     }                                                   \
     template <>                                         \
-    XSIMD_INLINE float NAME<float>() noexcept           \
+    XSIMD_INLINE constexpr float NAME<float>() noexcept           \
     {                                                   \
         return bit_cast<float>((uint32_t)SINGLE);       \
     }                                                   \
     template <>                                         \
-    XSIMD_INLINE double NAME<double>() noexcept         \
+    XSIMD_INLINE constexpr double NAME<double>() noexcept         \
     {                                                   \
         return bit_cast<double>((uint64_t)DOUBLE);      \
     }
